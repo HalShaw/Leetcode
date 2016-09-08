@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 class Solution(object):
     def searchInsert(self, nums, target):
         """
@@ -20,4 +21,28 @@ class Solution(object):
                     return i
 if __name__=='__main__':
     s=Solution()
+=======
+class Solution(object):
+    def searchInsert(self, nums, target):
+        """
+        :type nums: List[int]
+        :type target: int
+        :rtype: int
+        """
+        lst=sorted(list(set(nums)))
+        for i,x in enumerate(lst):
+            if target<lst[0]:
+                return 0
+            elif x==target:
+                return i
+            elif target>lst[-1]:
+                l=len(lst)
+                return l
+            else:
+                while target<x:
+                    target=x
+                    return i
+if __name__=='__main__':
+    s=Solution()
+>>>>>>> 70871cddfc98fb051720405e1963b5a95b61078b
     print(s.searchInsert([1,2,3,4,5,6,8],7))
