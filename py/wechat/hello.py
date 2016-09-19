@@ -10,18 +10,17 @@ import random
 import re
 import urllib
 import sys
-import pylibmc
 
 
 app=Flask(__name__)
 app.debug=True
 
-def youdao(word):
+def youdao(word):#有道翻译功能实现
 	quary=urllib2.quote(word)
 	baseurl=r'http://fanyi.youdao.com/openapi.do?keyfrom=自己的&key=自己的&type=data&doctype=json&version=1.1&q='
 	url=baseurl+quary
 	resp=urllib2.urlopen(url)
-	fanyi=json.loads(resp.read())
+	fanyi=json.loads(resp.read())#json解析
 	if fanyi['errorCode'] == 0:
 		if 'basic' in fanyi.keys():
 			trans=u'%s:\n%s\n%s\n网络释意:\n%s'%(fanyi['query'],''.join(fanyi['translation']),' '.join(fanyi['basic']['explains']),''.join(fanyi['web'][0]['value']))
@@ -38,22 +37,22 @@ def youdao(word):
 	else:
 		return u'对不起，您输入的单词%s无法翻译,请检查拼写'% word
 
-def joke():
+def joke():#笑话功能函数
 	try:
-		for i in random.sample(range(335),1):
+		for i in random.sample(range(1,335),1):#随机生成url
 			page='page='+str(i)
 			full_url='http://apis.baidu.com/showapi_open_bus/showapi_joke/joke_text?'+page
 			req = urllib2.Request(full_url)
 			req.add_header("apikey", "自己的key")
 			resp = urllib2.urlopen(req,timeout=5)
 			data= json.loads(resp.read())		
-		for i in random.sample(range(len(data['showapi_res_body']['contentlist'])),1):
+		for i in random.sample(range(len(data['showapi_res_body']['contentlist'])),1):#返回数据比较多，随机选取一条
 			return data['showapi_res_body']['contentlist'][i]['title']+'\n'+data['showapi_res_body']['contentlist'][i]['text']+'\n'	
 	except Exception:
 		return u'抱歉，你运气不好，没有人愿意给你讲笑话，请重试。'
 		
 
-def weather(city_name):
+def weather(city_name):#天气查询，因json格式分层太多，用正则表达式提取数据
 	str_city='city='+str(city_name)
 	url='http://apis.baidu.com/heweather/weather/free?'+str_city
 	req = urllib2.Request(url)
@@ -77,30 +76,30 @@ def weather(city_name):
 @app.route('/',methods=['GET','POST'])
 def wechat():
 	if request.method=='GET':
-		token='自己的'
+		token='自己的'#微信验证token
 		data=request.args
 		signature=data.get('signature','')
 		timestamp=data.get('timestamp','')
 		nonce =data.get('nonce','')
 		echostr=data.get('echostr','')
-		s=[timestamp,nonce,token]
+		s=[timestamp,nonce,token]#微信验证参数，先排序，然后hash
 		s.sort()
 		s=''.join(s)
-		if(hashlib.sha1(s).hexdigest()==signature):
+		if(hashlib.sha1(s).hexdigest()==signature):#hash处理后与微信对接，验证通过后才可以
 			return make_response(echostr)
 	else:
-		rec=request.stream.read()
+		rec=request.stream.read()#公众号返回的值是xml格式，读取并使用xml.tree提取数据
 		xml_rec=ET.fromstring(rec)
 		tou = xml_rec.find('ToUserName').text
 		fromu = xml_rec.find('FromUserName').text
-		content = xml_rec.find('Content').text
+		content = xml_rec.find('Content').text#返回格式与发送来的数据格式只需交换一下ToUserName和FromUserName
  		xml_rep = "<xml><ToUserName><![CDATA[%s]]></ToUserName><FromUserName><![CDATA[%s]]></FromUserName><CreateTime>%s</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[%s]]></Content><FuncFlag>0</FuncFlag></xml>"
 		if content.lower()=='joke':
 			response = make_response(xml_rep % (fromu,tou,str(int(time.time())),joke()))
 			response.content_type='application/xml'
 			return response
 		elif 'tianqi' in content.lower():
-			if type(content).__name__ == "unicode":
+			if type(content).__name__ == "unicode":#解决中文编码问题，支持中文和拼音查询天气
 				content = content.encode('UTF-8')
 				place=content.lower().replace('+tianqi','')
 				response = make_response(xml_rep % (fromu,tou,str(int(time.time())),weather(place)))
@@ -112,7 +111,7 @@ def wechat():
 				response.content_type='application/xml'
 				return response
 		else:
-			if type(content).__name__ == "unicode":
+			if type(content).__name__ == "unicode":#解决翻译过程中中文翻译英文问题
 				content = content.encode('UTF-8')
 				new_word=youdao(content)
 				response = make_response(xml_rep % (fromu,tou,str(int(time.time())),new_word))
