@@ -11,7 +11,7 @@ class Solution(object):
         :type val: int
         :rtype: ListNode
         """
-        dummy = ListNode(-1)
+        dummy = ListNode(-1)#
         dummy.next = head
         pointer = dummy
         while(pointer.next):
