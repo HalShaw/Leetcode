@@ -1,3 +1,4 @@
-#Leetcode题解
-##Python2.7
+- Leetcode题
+
+- Python2.7
 
